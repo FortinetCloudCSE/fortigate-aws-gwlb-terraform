@@ -1,0 +1,10 @@
+variable "access_key" {}
+variable "secret_key" {}
+variable "region" {}
+variable "vpc_id" {}
+variable "subnet_ids" {}
+variable "num_of_fgts_per_az" {}
+variable "instance_ids_a" {}
+variable "instance_ids_b" {}
+variable "tag_name_prefix" {}
+variable "tag_name_unique" {}
