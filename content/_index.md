@@ -4,6 +4,6 @@ weight: 1
 archetype: home
 ---
 
-![Example Diagram](./fgts-gwlb1.png)
+![](./fgts-gwlb1.png)
 
-![Example Diagram](./fgts-gwlb2.png)
+![](./fgts-gwlb2.png)

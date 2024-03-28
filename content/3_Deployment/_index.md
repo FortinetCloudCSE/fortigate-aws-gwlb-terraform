@@ -14,7 +14,7 @@ git clone https://github.com/FortinetCloudCSE/fortigate-aws-gwlb-terraform.git
 
 2.  Change directories and modify the terraform.tfvars file with your credentials and deployment information. 
 
-{{% notice note %}} In the terraform.tfvars file, the comments explain what inputs are expected for the variables. For further details on a given variable or to see all possible variables, reference the variables.tf file. {{% /notice %}}
+{{% notice note %}} In the terraform.tfvars file, the comments explain what inputs are expected for the variables. For further details on a given variable or to see all possible variables, reference the variables.tf file. We chose to deploy 2 FGTs per AZ and set tgw_creation to yes.  {{% /notice %}}
 ```
 cd fortigate-aws-gwlb-terraform/terraform
 nano terraform.tfvars
@@ -27,7 +27,7 @@ terraform validate
 terraform apply --auto-approve
 ```
 
-4.  When the deployment is complete, you will see login information for the FortiGates like so.
+4.  When the deployment is complete, you will see the public IPs and instance IDs listed in the outputs to access each FGT and other information.
 ```
 Apply complete! Resources: 85 added, 0 changed, 0 destroyed.
 
@@ -36,8 +36,10 @@ Outputs:
 fgt_login_info = <<EOT
 # fgt username: admin
 # fgt initial password: instance-id of the fgt
-# fgt_ids_a : ["i-0da49620651932d08","i-0ed26230f5d1f8f3b"]  
-# fgt_ips_a : ["54.204.138.149","18.233.42.183"]
+# fgt_ids_a : ["i-053888445f2e677ef","i-09c5e7a6bf403cd77"]  
+# fgt_ips_a : ["34.235.8.29","52.70.176.130"]
+# fgt_ids_b : ["i-094aae24d8f1665b0","i-0575b16f6aeeb0e15"]  
+# fgt_ips_b : ["3.210.241.134","44.196.135.34"]
 
 EOT
 gwlb_info = <<EOT
@@ -47,23 +49,12 @@ gwlb_info = <<EOT
 # gwlb ips : ["10.0.13.83","10.0.14.93"]
 
 EOT
-tgw_info = "tgw_creation = no"
+tgw_info = <<EOT
+# tgw id: tgw-09eb29c4aa20fe1ce
+# tgw spoke route table id: tgw-rtb-0b080f43f34fd129d
+# tgw security route table id: tgw-rtb-0c09fcc9ce8d3e917
+
+EOT
 ```
 
-5.  On the FortiGate GUI navigate to Network > Interfaces, Network > Policy Routes, and run the CLI commands shown below to see the bootstrapped networking config.  **Notice** the GENEVE tunnels are between the FGT port1 interface IP and the private IP of the GWLB node ENI IP.  Also **notice** the priority settings in the static routes and policy routes which allow using the FGTs as Nat GWs for internet bound traffic but to hairpin east/west traffic.
-
-     ![](deploy1a.png)
-     ![](deploy1b.png)
-     ![](deploy1c.png)
-     ![](deploy1d.png)
-
-
-6.  We can use a sniffer command on one or all FGTs to see traffic flow over the GENEVE tunnels to different destinations.  Since the GWLB will hash traffic based on source/dest IPs, Ports, and Protocol, either run the sniffer command on all FGTs or temporarily shutdown all FGTs but one to easily verify traffic flow.
-
-     {{% notice tip %}}Notice that the FGTs are acting as a Nat GW for internet bound traffic and Source NATing the traffic and routing it out port1, while east/west is hair pinned back to the correct geneve tunnel.{{% /notice %}}
-
-     ![](deploy2a.png)
-     ![](deploy2b.png)
-     ![](deploy2c.png)
-
-7.  This concludes the template deployment example.
+5.  This concludes the template deployment example.

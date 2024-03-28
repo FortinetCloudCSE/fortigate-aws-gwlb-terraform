@@ -230,6 +230,15 @@ set logtraffic all
 next
 end
 
+config system sdn-connector
+edit aws-instance-role
+set status enable
+set type aws
+set use-metadata-iam enable
+set alt-resource-ip enable
+next
+end
+
 %{ if license_type == "byol" }
 --==Boundary==
 Content-Type: text/plain; charset="us-ascii"
