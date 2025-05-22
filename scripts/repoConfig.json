@@ -1,0 +1,37 @@
+{
+    "repoName": "fortigate-aws-gwlb-terraform",
+    "author": "Hiruy Aberra",
+    "workshopTitle": "fortigate-aws-gwlb-terraform",
+    "themeVariant": "Workshop",
+    "logoBannerText": "",
+    "logoBannerSubText": "",
+    "errorLevel": "warning",
+    "googleServicesID": "G-5RZBH288ST",
+    "marketingCode": "FortiHugo202",
+    "shortcuts": [
+        {
+            "text": "Fortinet Cloud CSE GitHub Org",
+            "URL": "https://github.com/FortinetCloudCSE",
+            "icon": "fa-tools",
+            "weight": 1
+        },
+        {
+            "text": "CSE Team FGCP in AWS",
+            "URL": "https://fortinetcloudcse.github.io/GWLB-in-AWS",
+            "icon": "fa-tools",
+            "weight": 2
+        },
+        {
+            "text": "Fortinet in AWS Docs",
+            "URL": "https://docs.fortinet.com/cloud-solutions/aws",
+            "icon": "fa-tools",
+            "weight": 3
+        },
+        {
+            "text": "AWS MP Listings for Fortinet",
+            "URL": "https://aws.amazon.com/marketplace/search/results?searchTerms=fortinet",
+            "icon": "fa-tools",
+            "weight": 4
+        }
+    ]
+}
