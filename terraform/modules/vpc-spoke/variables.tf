@@ -7,9 +7,14 @@ variable "public_subnet_cidrs" {}
 variable "private_subnet_cidrs" {}
 variable "gwlb_subnet_cidrs" {}
 variable "tgw_creation" {}
+variable "cwan_creation" {}
 variable "transit_gateway_id" {}
 variable "tgw_security_route_table_id" {}
 variable "tgw_spoke_route_table_id" {}
+variable "cwan_id" {}
+variable "cwan_arn" {}
+variable "cwan_segment" {}
+variable "cwan_policy_state" {}
 variable "gwlb_endpoint_service_name" {}
 variable "gwlb_endpoint_service_type" {}
 variable "tag_name_prefix" {}

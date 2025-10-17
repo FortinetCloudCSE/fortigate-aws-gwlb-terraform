@@ -12,7 +12,12 @@ secret_key = ""
 region = "us-east-1"
 availability_zones = ["us-east-1a", "us-east-1b"]
 
-# To deploy a new TGW and two spoke VPCs, specify 'yes'
+/*
+To deploy a new TGW and two spoke VPCs, specify 'yes'.
+To deploy a new CWAN and two spoke VPCs, specify 'yes'.
+Only specify yes for tgw_creation or cwan_creation not both.
+*/
+cwan_creation = "no"
 tgw_creation = "no"
 
 # Specify number of Fgts to deploy per AZ (Min 1, Max 2)
@@ -27,8 +32,8 @@ cidr_for_access = "0.0.0.0/0"
 # Specify a tag prefix that will be used to name resources.
 tag_name_prefix = "poc"
 
-# Specify the FortiOS version to use 7.0, 7.2, or 7.4
-fortios_version = "7.2"
+# Specify the FortiOS version to use 7.2, 7.4, or 7.6
+fortios_version = "7.4"
 
 /*
 For license_type, specify byol, flex, or payg.
@@ -44,7 +49,7 @@ flex_tokens_for_1st_fgt_per_az = ["1A1A1A1A1A1A1A1A1A1A", "2A2A2A2A2A2A2A2A2A2A"
 flex_Tokens_for_2nd_fgt_per_az = ["1B1B1B1B1B1B1B1B1B1B", "2B2B2B2B2B2B2B2B2B2B"]
 */
 license_type = "payg"
-license_files_for_1st_fgt_per_az = ""
-license_files_for_2nd_fgt_per_az = ""
-flex_tokens_for_1st_fgt_per_az = ""
-flex_Tokens_for_2nd_fgt_per_az = ""
+license_files_for_1st_fgt_per_az = []
+license_files_for_2nd_fgt_per_az = []
+flex_tokens_for_1st_fgt_per_az = []
+flex_Tokens_for_2nd_fgt_per_az = []

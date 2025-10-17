@@ -23,8 +23,8 @@ EOF
 }
 
 resource "aws_iam_instance_profile" "iam_instance_profile" {
-    name = "${var.tag_name_prefix}-iam-instance-profile"
-    role = "${var.tag_name_prefix}-iam-role"
+  name = "${var.tag_name_prefix}-iam-instance-profile"
+  role = "${var.tag_name_prefix}-iam-role"
 }
 
 resource "aws_iam_role_policy" "iam-role-policy" {
@@ -57,18 +57,6 @@ EOF
 variable "fgtami" {
   type = map(any)
   default = {
-    "7.0" = {
-      "arm" = {
-        "byol" = "FortiGate-VMARM64-AWS *(7.0.*)*|33ndn84xbrajb9vmu5lxnfpjq"
-		"flex" = "FortiGate-VMARM64-AWS *(7.0.*)*|33ndn84xbrajb9vmu5lxnfpjq"
-        "payg" = "FortiGate-VMARM64-AWSONDEMAND *(7.0.*)*|8gc40z1w65qjt61p9ps88057n"
-      },
-      "intel" = {
-        "byol" = "FortiGate-VM64-AWS *(7.0.*)*|dlaioq277sglm5mw1y1dmeuqa"
-		"flex" = "FortiGate-VM64-AWS *(7.0.*)*|dlaioq277sglm5mw1y1dmeuqa"
-        "payg" = "FortiGate-VM64-AWSONDEMAND *(7.0.*)*|2wqkpek696qhdeo7lbbjncqli"
-      }
-    },
     "7.2" = {
       "arm" = {
         "byol" = "FortiGate-VMARM64-AWS *(7.2.*)*|33ndn84xbrajb9vmu5lxnfpjq"
@@ -89,8 +77,20 @@ variable "fgtami" {
       },
       "intel" = {
         "byol" = "FortiGate-VM64-AWS *(7.4.*)*|dlaioq277sglm5mw1y1dmeuqa"
-		"flex"  = "FortiGate-VM64-AWS *(7.4.*)*|dlaioq277sglm5mw1y1dmeuqa"
+		"flex" = "FortiGate-VM64-AWS *(7.4.*)*|dlaioq277sglm5mw1y1dmeuqa"
         "payg" = "FortiGate-VM64-AWSONDEMAND *(7.4.*)*|2wqkpek696qhdeo7lbbjncqli"
+      }
+    },
+    "7.6" = {
+      "arm" = {
+        "byol" = "FortiGate-VMARM64-AWS *(7.6.*)*|33ndn84xbrajb9vmu5lxnfpjq"
+		"flex" = "FortiGate-VMARM64-AWS *(7.6.*)*|33ndn84xbrajb9vmu5lxnfpjq"
+        "payg" = "FortiGate-VMARM64-AWSONDEMAND *(7.6.*)*|8gc40z1w65qjt61p9ps88057n"
+      },
+      "intel" = {
+        "byol" = "FortiGate-VM64-AWS *(7.6.*)*|dlaioq277sglm5mw1y1dmeuqa"
+		"flex"  = "FortiGate-VM64-AWS *(7.6.*)*|dlaioq277sglm5mw1y1dmeuqa"
+        "payg" = "FortiGate-VM64-AWSONDEMAND *(7.6.*)*|2wqkpek696qhdeo7lbbjncqli"
       }
     }
   }
@@ -107,7 +107,6 @@ locals {
 data "aws_ami" "fortigate_ami" {
   most_recent      = true
   owners           = ["aws-marketplace"]
-
   filter {
     name   = "name"
     values = [local.ami_search_string]
