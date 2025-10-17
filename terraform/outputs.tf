@@ -4,17 +4,17 @@ output "fgt_login_info" {
       <<-FGTLOGIN
       # fgt username: admin
       # fgt initial password: instance-id of the fgt
-      # fgt_ids_a : ${jsonencode(module.fgts.fgt_ids_a)}  
-      # fgt_ips_a : ${jsonencode(module.fgts.fgt_eip_public_ips_a)}
-      # fgt_ids_b : ${jsonencode(module.fgts.fgt_ids_b)}  
-      # fgt_ips_b : ${jsonencode(module.fgts.fgt_eip_public_ips_b)}
+      # fgt_ids_a: ${jsonencode(module.fgts.fgt_ids_a)}  
+      # fgt_ips_a: ${jsonencode(module.fgts.fgt_eip_public_ips_a)}
+      # fgt_ids_b: ${jsonencode(module.fgts.fgt_ids_b)}  
+      # fgt_ips_b: ${jsonencode(module.fgts.fgt_eip_public_ips_b)}
       FGTLOGIN
 	) : (
       <<-FGTLOGIN
       # fgt username: admin
       # fgt initial password: instance-id of the fgt
-      # fgt_ids_a : ${jsonencode(module.fgts.fgt_ids_a)}  
-      # fgt_ips_a : ${jsonencode(module.fgts.fgt_eip_public_ips_a)}
+      # fgt_ids_a: ${jsonencode(module.fgts.fgt_ids_a)}  
+      # fgt_ips_a: ${jsonencode(module.fgts.fgt_eip_public_ips_a)}
       FGTLOGIN
 	)
   )
@@ -22,10 +22,10 @@ output "fgt_login_info" {
 
 output "gwlb_info" {
   value = <<-GWLBINFO
-  # gwlb arn_suffix: ${element(module.security-vpc-gwlb.gwlb_arn_suffix, 0)}
-  # gwlb service_name : ${module.security-vpc-gwlb.gwlb_endpoint_service_name}
-  # gwlb service_type : ${module.security-vpc-gwlb.gwlb_endpoint_service_type}
-  # gwlb ips : ${jsonencode(module.security-vpc-gwlb.gwlb_ips[*])}
+  # gwlb arn_suffix: ${element(module.inspection-vpc-gwlb.gwlb_arn_suffix, 0)}
+  # gwlb service_name: ${module.inspection-vpc-gwlb.gwlb_endpoint_service_name}
+  # gwlb service_type: ${module.inspection-vpc-gwlb.gwlb_endpoint_service_type}
+  # gwlb ips: ${jsonencode(module.inspection-vpc-gwlb.gwlb_ips[*])}
   GWLBINFO
 }
 
@@ -35,4 +35,11 @@ output "tgw_info" {
   # tgw spoke route table id: ${module.transit-gw[0].tgw_spoke_route_table_id}
   # tgw security route table id: ${module.transit-gw[0].tgw_security_route_table_id}
   TGWINFO
+}
+
+output "cwan_info" {
+  value =  var.cwan_creation == "no" ? "cwan_creation = no" : <<-CWANINFO
+  # cwan id: ${module.cloud-wan[0].cwan_id}
+  # cwan arn: ${module.cloud-wan[0].cwan_arn}
+  CWANINFO
 }

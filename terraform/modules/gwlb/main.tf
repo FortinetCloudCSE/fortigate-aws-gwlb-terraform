@@ -8,7 +8,7 @@ resource "aws_lb" "gwlb" {
 resource "aws_lb_target_group" "gwlb_target_group" {
   name = "${var.tag_name_prefix}-${var.tag_name_unique}-tgrp"
   protocol = "GENEVE"
-  port =  "6081"
+  port = "6081"
   vpc_id = var.vpc_id
   health_check {
     protocol = "TCP"
@@ -28,7 +28,7 @@ resource "aws_lb_listener" "gwlb_listner" {
 }
 
 resource "aws_vpc_endpoint_service" "gwlb_endpoint_service" {
-  acceptance_required        = false
+  acceptance_required = false
   gateway_load_balancer_arns = [aws_lb.gwlb.arn]
   tags = {
     Name = "${var.tag_name_prefix}-${var.tag_name_unique}-vpce-service"
@@ -48,7 +48,7 @@ data "aws_network_interfaces" "gwlb_enis" {
 }
 
 locals {
-  gwlb_eni_ids =  flatten(data.aws_network_interfaces.gwlb_enis[*].*.ids)
+  gwlb_eni_ids = flatten(data.aws_network_interfaces.gwlb_enis[*].*.ids)
 }
 
 data "aws_network_interface" "gwlb_ips" {
