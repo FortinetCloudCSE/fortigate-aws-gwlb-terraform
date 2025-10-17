@@ -147,7 +147,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tgw_attachment" {
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
   tags = {
-    Name = "${var.tag_name_prefix}-${var.tag_name_unique}-tgw-attach"
+    Name = "${var.tag_name_prefix}-${var.tag_name_unique}-vpc-attachment"
   }
 }
 
