@@ -144,13 +144,24 @@ variable "instance_type" {
   c7gn.2xlarge 
   c7gn.4xlarge 
   c7gn.8xlarge 
-  c7gn.16xlarge"
+  c7gn.16xlarge
+  c8g.xlarge
+  c8g.2xlarge
+  c8g.4xlarge
+  c8g.8xlarge
+  c8g.16xlarge
+  c8gn.large
+  c8gn.xlarge
+  c8gn.2xlarge
+  c8gn.4xlarge
+  c8gn.8xlarge
+  c8gn.16xlarge
   */
 }
 variable "cidr_for_access" {
   description = "Provide a network CIDR for accessing the Fgts"
   type = string
-  default = "0.0.0.0/0"
+  default = ""
 }
 variable "keypair" {
   description = "Provide a keypair for accessing the Fgts"

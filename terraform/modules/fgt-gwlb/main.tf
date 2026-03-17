@@ -98,7 +98,7 @@ variable "fgtami" {
 
 locals {
   instance_family = split(".", "${var.instance_type}")[0]
-  graviton = (local.instance_family == "c6g") || (local.instance_family == "c6gn") || (local.instance_family == "c7g") || (local.instance_family == "c7gn") ? true : false
+  graviton = (local.instance_family == "c6g") || (local.instance_family == "c6gn") || (local.instance_family == "c7g") || (local.instance_family == "c7gn") || (local.instance_family == "c8g") || (local.instance_family == "c8gn") ? true : false
   arch = local.graviton == true ? "arm" : "intel"
   ami_search_string = split("|", "${var.fgtami[var.fortios_version][local.arch][var.license_type]}")[0]
   product_code = split("|", "${var.fgtami[var.fortios_version][local.arch][var.license_type]}")[1]
