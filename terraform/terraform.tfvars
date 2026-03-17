@@ -27,7 +27,7 @@ num_of_fgts_per_az = 1
 keypair = ""
 
 # Specify the CIDR block which you will be logging into the FGTs from.
-cidr_for_access = "0.0.0.0/0"
+cidr_for_access = ""
 
 # Specify a tag prefix that will be used to name resources.
 tag_name_prefix = "poc"
