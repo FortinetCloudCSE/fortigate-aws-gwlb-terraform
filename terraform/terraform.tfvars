@@ -4,13 +4,18 @@ Any variables in variables.tf can be overriden here.
 Overriding variables here keeps the variables.tf as a clean local reference.
 */
 
-# Provide the credentials to access the AWS account
-access_key = ""
-secret_key = ""
+/*
+Credentials are automatically detected from standard AWS authentication means:
+ - AWS creds file used with AWS CLI (~/.aws/credentials)
+ - Environment variables (AWSACCESSKEYID, AWSSECRETACCESSKEY)
+ - IAM Roles (preferred for EC2, ECS)
+ - AWS SSO (aws sso login)
+For more documentation on how to authenticate, reference the link below: https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
+*/
 
 # Specify the region and AZs to use.
-region = "us-east-1"
-availability_zones = ["us-east-1a", "us-east-1b"]
+region             = ""
+availability_zones = []
 
 /*
 To deploy a new TGW and two spoke VPCs, specify 'yes'.
@@ -18,7 +23,7 @@ To deploy a new CWAN and two spoke VPCs, specify 'yes'.
 Only specify yes for tgw_creation or cwan_creation not both.
 */
 cwan_creation = "no"
-tgw_creation = "no"
+tgw_creation  = "no"
 
 # Specify number of Fgts to deploy per AZ (Min 1, Max 2)
 num_of_fgts_per_az = 1
@@ -48,8 +53,8 @@ Otherwise, leave these as empty strings.
 flex_tokens_for_1st_fgt_per_az = ["1A1A1A1A1A1A1A1A1A1A", "2A2A2A2A2A2A2A2A2A2A"]
 flex_Tokens_for_2nd_fgt_per_az = ["1B1B1B1B1B1B1B1B1B1B", "2B2B2B2B2B2B2B2B2B2B"]
 */
-license_type = "payg"
+license_type                     = "payg"
 license_files_for_1st_fgt_per_az = []
 license_files_for_2nd_fgt_per_az = []
-flex_tokens_for_1st_fgt_per_az = []
-flex_Tokens_for_2nd_fgt_per_az = []
+flex_tokens_for_1st_fgt_per_az   = []
+flex_Tokens_for_2nd_fgt_per_az   = []

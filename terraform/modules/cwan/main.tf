@@ -22,113 +22,113 @@ data "aws_networkmanager_core_network_policy_document" "policy_data" {
     asn_ranges = ["64512-64518"]
     edge_locations {
       location = var.region
-      asn = 64512
+      asn      = 64512
     }
     vpn_ecmp_support = true
   }
-  
+
   segments {
-    name = "production"
-    description = "production-segment"
-    edge_locations = [var.region]
+    name                          = "production"
+    description                   = "production-segment"
+    edge_locations                = [var.region]
     require_attachment_acceptance = false
-    isolate_attachments  = false
+    isolate_attachments           = false
   }
   segments {
-    name = "development"
-    description = "development-segment"
-    edge_locations = [var.region]
+    name                          = "development"
+    description                   = "development-segment"
+    edge_locations                = [var.region]
     require_attachment_acceptance = false
-    isolate_attachments  = false
+    isolate_attachments           = false
   }
   segments {
-    name = "sharedservices"
-    description = "sharedservices-segment"
-    edge_locations = [var.region]
+    name                          = "sharedservices"
+    description                   = "sharedservices-segment"
+    edge_locations                = [var.region]
     require_attachment_acceptance = false
-    isolate_attachments  = false
+    isolate_attachments           = false
   }
   segments {
-    name = "inspection"
-    description = "ngfw-segment"
-    edge_locations = [var.region]
+    name                          = "inspection"
+    description                   = "ngfw-segment"
+    edge_locations                = [var.region]
     require_attachment_acceptance = false
-    isolate_attachments  = false
+    isolate_attachments           = false
   }
-  
+
   segment_actions {
-    action = "share"
-    mode = "attachment-route"
-    segment = "production"
+    action     = "share"
+    mode       = "attachment-route"
+    segment    = "production"
     share_with = ["inspection"]
   }
   segment_actions {
-    action = "share"
-    mode = "attachment-route"
-    segment = "development"
+    action     = "share"
+    mode       = "attachment-route"
+    segment    = "development"
     share_with = ["inspection"]
   }
   segment_actions {
-   action = "share"
-   mode = "attachment-route"
-   segment = "sharedservices"
-   share_with = ["inspection"]
+    action     = "share"
+    mode       = "attachment-route"
+    segment    = "sharedservices"
+    share_with = ["inspection"]
   }
 
   attachment_policies {
-    rule_number = 100
+    rule_number     = 100
     condition_logic = "and"
     conditions {
-      type = "tag-value"
+      type     = "tag-value"
       operator = "contains"
-      key = "segment"
-      value = "production"
+      key      = "segment"
+      value    = "production"
     }
     action {
       association_method = "constant"
-	  segment = "production"
+      segment            = "production"
     }
   }
   attachment_policies {
-    rule_number = 200
+    rule_number     = 200
     condition_logic = "and"
     conditions {
-      type = "tag-value"
+      type     = "tag-value"
       operator = "contains"
-      key = "segment"
-      value = "development"
+      key      = "segment"
+      value    = "development"
     }
     action {
       association_method = "constant"
-	  segment = "development"
+      segment            = "development"
     }
   }
   attachment_policies {
-    rule_number = 300
+    rule_number     = 300
     condition_logic = "and"
     conditions {
-      type = "tag-value"
+      type     = "tag-value"
       operator = "contains"
-      key = "segment"
-      value = "sharedservices"
+      key      = "segment"
+      value    = "sharedservices"
     }
     action {
       association_method = "constant"
-	  segment = "sharedservices"
+      segment            = "sharedservices"
     }
   }
   attachment_policies {
-    rule_number = 400
+    rule_number     = 400
     condition_logic = "and"
     conditions {
-      type = "tag-value"
+      type     = "tag-value"
       operator = "contains"
-      key = "segment"
-      value = "inspection"
+      key      = "segment"
+      value    = "inspection"
     }
     action {
       association_method = "constant"
-	  segment = "inspection"
+      segment            = "inspection"
     }
   }
 }
