@@ -6,16 +6,24 @@ resource "aws_lb" "gwlb" {
 }
 
 resource "aws_lb_target_group" "gwlb_target_group" {
-  name     = "${var.tag_name_prefix}-${var.tag_name_unique}-tgrp"
-  protocol = "GENEVE"
-  port     = "6081"
-  vpc_id   = var.vpc_id
+  name                 = "${var.tag_name_prefix}-${var.tag_name_unique}-tgrp"
+  protocol             = "GENEVE"
+  port                 = "6081"
+  target_type          = "ip"
+  vpc_id               = var.vpc_id
+  deregistration_delay = 20
+  target_failover {
+    on_deregistration = "rebalance"
+    on_unhealthy      = "rebalance"
+  }
   health_check {
-    protocol            = "TCP"
-    port                = "80"
-    interval            = "10"
-    healthy_threshold   = "2"
-    unhealthy_threshold = "2"
+    protocol = "HTTP"
+    port     = "8008"
+    #path                = "/"
+    interval            = "5"
+    timeout             = "5"
+    healthy_threshold   = "3"
+    unhealthy_threshold = "3"
   }
 }
 
@@ -56,14 +64,3 @@ data "aws_network_interface" "gwlb_ips" {
   id    = element(local.gwlb_eni_ids, count.index)
 }
 
-resource "aws_lb_target_group_attachment" "gwlb_target_group_attachments_a" {
-  count            = length(var.instance_ids_a)
-  target_group_arn = aws_lb_target_group.gwlb_target_group.arn
-  target_id        = var.instance_ids_a[count.index]
-}
-
-resource "aws_lb_target_group_attachment" "gwlb_target_group_attachments_b" {
-  count            = var.num_of_fgts_per_az == 2 ? length(var.instance_ids_b) : 0
-  target_group_arn = aws_lb_target_group.gwlb_target_group.arn
-  target_id        = var.instance_ids_b[count.index]
-}
