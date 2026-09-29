@@ -14,9 +14,9 @@ git clone https://github.com/FortinetCloudCSE/fortigate-aws-gwlb-terraform.git
 
 2.  Change directories and modify the terraform.tfvars file with your credentials and deployment information. 
 
-{{% notice note %}} In the terraform.tfvars file, the comments explain what inputs are expected for the variables. For further details on a given variable or to see all possible variables, reference the variables.tf file. We chose to deploy 2 FGTs per AZ and set tgw_creation to yes.  {{% /notice %}}
+{{% notice note %}} In the terraform.tfvars file, the comments explain what inputs are expected for the variables. For further details on a given variable or to see all possible variables, reference the variables.tf file. We chose to deploy a new vpc with 2 FGTs per AZ and set tgw_creation to yes. To use the existing vpc example, navigate to `cd fortigate-aws-gwlb-terraform/terraform/examples/existing_vpc/`{{% /notice %}}
 ```
-cd fortigate-aws-gwlb-terraform/terraform
+cd fortigate-aws-gwlb-terraform/terraform/examples/new_vpc/
 nano terraform.tfvars
 ```
 
