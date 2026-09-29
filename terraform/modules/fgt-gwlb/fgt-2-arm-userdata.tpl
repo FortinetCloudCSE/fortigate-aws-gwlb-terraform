@@ -12,61 +12,98 @@ set hostname ${hostname}
 set admintimeout 60
 end
 
+config system settings
+set allow-subnet-overlap enable
+end
+
+config system probe-response
+set mode http-probe
+set port 8008
+set http-probe-value OK
+end
+
 config system interface
 edit port1
 set vdom root
-set alias public
+set alias 2-arm-public
 set mode dhcp
-set allowaccess ping https ssh http fgfm
+%{ if dedicated_mgmt == "false" }
+set allowaccess ping https fgfm
+%{ endif }
+%{ if dedicated_mgmt == "true" }
+set allowaccess ping
+%{ endif }
 set type physical
 set mtu-override enable
 set mtu 9001
 next
 edit port2
-set alias private
+set vdom root
+set alias 2-arm-private
 set mode dhcp
 set defaultgw disable
-set allowaccess ping https ssh fgfm
+%{ if dedicated_mgmt == "false" }
+set allowaccess ping https fgfm probe-response
+%{ endif }
+%{ if dedicated_mgmt == "true" }
+set allowaccess ping
+%{ endif }
+set allowaccess ping probe-response
+set type physical
 set mtu-override enable
 set mtu 9001
 next
+%{ if dedicated_mgmt == "true" }
+edit port3
+set vdom root
+set alias dedicated-mgmt
+set mode dhcp
+set defaultgw enable
+set allowaccess ping https fgfm
+set vrf 1
+set dedicated-to management
+set type physical
+set mtu-override enable
+set mtu 9001
+next
+%{ endif }
 end
 
 config system geneve
 edit gwlb1-az1
-set interface port1
+set interface port2
 set type ppp
 set remote-ip ${gwlb_ip1}
 next
 edit gwlb1-az2
-set interface port1
+set interface port2
 set type ppp
 set remote-ip ${gwlb_ip2}
 next
 %{ if gwlb_ip3 != "" }
 edit gwlb1-az3
-set interface port1
+set interface port2
 set type ppp
 set remote-ip ${gwlb_ip3}
 next
 %{ endif }
 %{ if gwlb_ip4 != "" }
 edit gwlb1-az4
-set interface port1
+set interface port2
 set type ppp
 set remote-ip ${gwlb_ip4}
 next
 %{ endif }
 %{ if gwlb_ip5 != "" }
 edit gwlb1-az5
-set interface port1
+set interface port2
 set type ppp
 set remote-ip ${gwlb_ip5}
 next
 %{ endif }
 %{ if gwlb_ip6 != "" }
 edit gwlb1-az6
-set interface port1
+set interface port2
 set type ppp
 set remote-ip ${gwlb_ip6}
 next
@@ -94,42 +131,92 @@ next
 end
 
 config router static
-edit 1
-set distance 5
-set priority 100
-set device gwlb1-az1
+edit 0
+set dst ${gwlb_ip1}/32
+set device port2
+set dynamic-gateway enable
+set comment 'host route to reach GWLB eni for geneve tunnel in AZ1'
 next
-edit 2
-set distance 5
-set priority 100
-set device gwlb1-az2
+edit 0
+set dst ${gwlb_ip2}/32
+set device port2
+set dynamic-gateway enable
+set comment 'host route to reach GWLB eni for geneve tunnel in AZ2'
 next
 %{ if gwlb_ip3 != "" }
-edit 3
-set distance 5
-set priority 100
-set device gwlb1-az3
+edit 0
+set dst ${gwlb_ip3}/32
+set device port2
+set dynamic-gateway enable
+set comment 'host route to reach GWLB eni for geneve tunnel in AZ3'
 next
 %{ endif }
 %{ if gwlb_ip4 != "" }
-edit 4
-set distance 5
-set priority 100
-set device gwlb1-az4
+edit 0
+set dst ${gwlb_ip4}/32
+set device port2
+set dynamic-gateway enable
+set comment 'host route to reach GWLB eni for geneve tunnel in AZ4'
 next
 %{ endif }
 %{ if gwlb_ip5 != "" }
-edit 5
-set distance 5
-set priority 100
-set device gwlb1-az5
+edit 0
+set dst ${gwlb_ip5}/32
+set device port2
+set dynamic-gateway enable
+set comment 'host route to reach GWLB eni for geneve tunnel in AZ5'
 next
 %{ endif }
 %{ if gwlb_ip6 != "" }
-edit 6
+edit 0
+set dst ${gwlb_ip6}/32
+set device port2
+set dynamic-gateway enable
+set comment 'host route to reach GWLB eni for geneve tunnel in AZ6'
+next
+%{ endif }
+edit 0
+set distance 5
+set priority 100
+set device gwlb1-az1
+set comment 'only used for RPF check and not for routing'
+next
+edit 0
+set distance 5
+set priority 100
+set device gwlb1-az2
+set comment 'only used for RPF check and not for routing'
+next
+%{ if gwlb_ip3 != "" }
+edit 0
+set distance 5
+set priority 100
+set device gwlb1-az3
+set comment 'only used for RPF check and not for routing'
+next
+%{ endif }
+%{ if gwlb_ip4 != "" }
+edit 0
+set distance 5
+set priority 100
+set device gwlb1-az4
+set comment 'only used for RPF check and not for routing'
+next
+%{ endif }
+%{ if gwlb_ip5 != "" }
+edit 0
+set distance 5
+set priority 100
+set device gwlb1-az5
+set comment 'only used for RPF check and not for routing'
+next
+%{ endif }
+%{ if gwlb_ip6 != "" }
+edit 0
 set distance 5
 set priority 100
 set device gwlb1-az6
+set comment 'only used for RPF check and not for routing'
 next
 %{ endif }
 end
@@ -139,17 +226,20 @@ edit 1
 set input-device gwlb1-az1
 set dst "10.0.0.0/255.0.0.0" "172.16.0.0/255.240.0.0" "192.168.0.0/255.255.0.0"
 set output-device gwlb1-az1
+set comment '2-arm mode hairpins traffic to RFC1918 CIDR, otherwise skips policy route for public CIDRs'
 next
 edit 2
 set input-device gwlb1-az2
 set dst "10.0.0.0/255.0.0.0" "172.16.0.0/255.240.0.0" "192.168.0.0/255.255.0.0"
 set output-device gwlb1-az2
+set comment '2-arm mode hairpins traffic to RFC1918 CIDR, otherwise skips policy route for public CIDRs'
 next
 %{ if gwlb_ip3 != "" }
 edit 3
 set input-device gwlb1-az3
 set dst "10.0.0.0/255.0.0.0" "172.16.0.0/255.240.0.0" "192.168.0.0/255.255.0.0"
 set output-device gwlb1-az3
+set comment '2-arm mode hairpins traffic to RFC1918 CIDR, otherwise skips policy route for public CIDRs'
 next
 %{ endif }
 %{ if gwlb_ip4 != "" }
@@ -157,6 +247,7 @@ edit 4
 set input-device gwlb1-az4
 set dst "10.0.0.0/255.0.0.0" "172.16.0.0/255.240.0.0" "192.168.0.0/255.255.0.0"
 set output-device gwlb1-az4
+set comment '2-arm mode hairpins traffic to RFC1918 CIDR, otherwise skips policy route for public CIDRs'
 next
 %{ endif }
 %{ if gwlb_ip5 != "" }
@@ -164,6 +255,7 @@ edit 5
 set input-device gwlb1-az5
 set dst "10.0.0.0/255.0.0.0" "172.16.0.0/255.240.0.0" "192.168.0.0/255.255.0.0"
 set output-device gwlb1-az5
+set comment '2-arm mode hairpins traffic to RFC1918 CIDR, otherwise skips policy route for public CIDRs'
 next
 %{ endif }
 %{ if gwlb_ip6 != "" }
@@ -171,6 +263,7 @@ edit 6
 set input-device gwlb1-az6
 set dst "10.0.0.0/255.0.0.0" "172.16.0.0/255.240.0.0" "192.168.0.0/255.255.0.0"
 set output-device gwlb1-az6
+set comment '2-arm mode hairpins traffic to RFC1918 CIDR, otherwise skips policy route for public CIDRs'
 next
 %{ endif }
 end
@@ -195,7 +288,7 @@ end
 
 config firewall policy
 edit 1
-set name "egress"
+set name "2-arm-egress"
 set srcintf "gwlb1-tunnels"
 set dstintf "port1"
 set srcaddr "rfc-1918-subnets"
@@ -207,22 +300,11 @@ set logtraffic all
 set nat enable
 next
 edit 2
-set name "ingress"
+set name "2-arm-hairpin"
 set srcintf "gwlb1-tunnels"
 set dstintf "gwlb1-tunnels"
 set srcaddr "all"
-set dstaddr "rfc-1918-subnets"
-set action accept
-set schedule "always"
-set service "ALL"
-set logtraffic all
-next
-edit 3
-set name "east-west"
-set srcintf "gwlb1-tunnels"
-set dstintf "gwlb1-tunnels"
-set srcaddr "rfc-1918-subnets"
-set dstaddr "rfc-1918-subnets"
+set dstaddr "all"
 set action accept
 set schedule "always"
 set service "ALL"

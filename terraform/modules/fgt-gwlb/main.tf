@@ -96,6 +96,8 @@ locals {
   arch              = local.graviton == true ? "arm" : "intel"
   ami_search_string = split("|", "${var.fgtami[var.fortios_version][local.arch][var.license_type]}")[0]
   product_code      = split("|", "${var.fgtami[var.fortios_version][local.arch][var.license_type]}")[1]
+
+  one_arm = var.arm_mode == "1-arm" ? true : false
 }
 
 data "aws_ami" "fortigate_ami" {
@@ -140,32 +142,61 @@ resource "aws_security_group" "secgrp" {
   }
 }
 
-resource "aws_network_interface" "public_enis_a" {
-  count             = length(var.availability_zones)
+resource "aws_network_interface" "one_arm_enis_a" {
+  count             = var.arm_mode == "1-arm" ? length(var.availability_zones) : 0
   subnet_id         = var.public_subnet_ids[count.index]
   security_groups   = [aws_security_group.secgrp.id]
   source_dest_check = false
   tags = {
-    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-eni0-${var.availability_zones[count.index]}"
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-1arm-public-${var.availability_zones[count.index]}"
   }
 }
 
-resource "aws_network_interface" "private_enis_a" {
-  count             = length(var.availability_zones)
+resource "aws_network_interface" "two_arm_public_enis_a" {
+  count             = var.arm_mode == "2-arm" ? length(var.availability_zones) : 0
+  subnet_id         = var.public_subnet_ids[count.index]
+  security_groups   = [aws_security_group.secgrp.id]
+  source_dest_check = false
+  tags = {
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-2arm-public-${var.availability_zones[count.index]}"
+  }
+}
+
+resource "aws_network_interface" "two_arm_private_enis_a" {
+  count             = var.arm_mode == "2-arm" ? length(var.availability_zones) : 0
   subnet_id         = var.private_subnet_ids[count.index]
   security_groups   = [aws_security_group.secgrp.id]
   source_dest_check = false
   tags = {
-    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-eni0-${var.availability_zones[count.index]}"
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-2arm-private-${var.availability_zones[count.index]}"
   }
 }
 
-resource "aws_eip" "fgt_eips_a" {
-  count             = length(var.availability_zones)
+resource "aws_network_interface" "dedicated_managment_enis_a" {
+  count             = var.dedicated_management ? length(var.availability_zones) : 0
+  subnet_id         = var.dedicated_management_placement == "public" ? var.public_subnet_ids[count.index] : var.private_subnet_ids[count.index]
+  security_groups   = [aws_security_group.secgrp.id]
+  source_dest_check = false
+  tags = {
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-mgmt-${var.availability_zones[count.index]}"
+  }
+}
+
+resource "aws_eip" "fgt_data_plane_eips_a" {
+  count             = var.internet_access == "eip" ? length(var.availability_zones) : 0
   domain            = "vpc"
-  network_interface = aws_network_interface.public_enis_a[count.index].id
+  network_interface = local.one_arm ? aws_network_interface.one_arm_enis_a[count.index].id : aws_network_interface.two_arm_public_enis_a[count.index].id
   tags = {
     Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-eip-${var.availability_zones[count.index]}"
+  }
+}
+
+resource "aws_eip" "fgt_dedicated_management_eips_a" {
+  count             = var.internet_access == "eip" && var.dedicated_management && var.dedicated_management_placement == "public" ? length(var.availability_zones) : 0
+  domain            = "vpc"
+  network_interface = aws_network_interface.dedicated_managment_enis_a[count.index].id
+  tags = {
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-mgmt-eip-${var.availability_zones[count.index]}"
   }
 }
 
@@ -188,13 +219,46 @@ resource "aws_instance" "fgts_a" {
     volume_type = "gp2"
     encrypted   = var.encrypt_volumes
   }
-  network_interface {
-    device_index         = 0
-    network_interface_id = aws_network_interface.public_enis_a[count.index].id
-  }
-  network_interface {
-    device_index         = 1
-    network_interface_id = aws_network_interface.private_enis_a[count.index].id
+  dynamic "network_interface" {
+    for_each = local.one_arm ? (
+      concat(
+        [
+          {
+            device_index = 0
+            eni_id       = aws_network_interface.one_arm_enis_a[count.index].id
+          }
+        ],
+        var.dedicated_management ? [
+          {
+            device_index = 1
+            eni_id       = aws_network_interface.dedicated_managment_enis_a[count.index].id
+          }
+        ] : []
+      )
+      ) : (
+      concat(
+        [
+          {
+            device_index = 0
+            eni_id       = aws_network_interface.two_arm_public_enis_a[count.index].id
+          },
+          {
+            device_index = 1
+            eni_id       = aws_network_interface.two_arm_private_enis_a[count.index].id
+          }
+        ],
+        var.dedicated_management ? [
+          {
+            device_index = 2
+            eni_id       = aws_network_interface.dedicated_managment_enis_a[count.index].id
+          }
+        ] : []
+      )
+    )
+    content {
+      device_index         = network_interface.value.device_index
+      network_interface_id = network_interface.value.eni_id
+    }
   }
   tags = {
     Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}a-${var.availability_zones[count.index]}"
@@ -203,49 +267,85 @@ resource "aws_instance" "fgts_a" {
 
 data "template_file" "fgt_userdata_a" {
   count    = length(var.availability_zones)
-  template = file("${path.module}/fgt-userdata.tpl")
+  template = file("${path.module}/fgt-${var.arm_mode}-userdata.tpl")
 
   vars = {
-    gwlb_ip1      = var.gwlb_ips[0]
-    gwlb_ip2      = var.gwlb_ips[1]
-    gwlb_ip3      = length(var.availability_zones) >= 3 ? var.gwlb_ips[2] : ""
-    gwlb_ip4      = length(var.availability_zones) >= 4 ? var.gwlb_ips[3] : ""
-    gwlb_ip5      = length(var.availability_zones) >= 5 ? var.gwlb_ips[4] : ""
-    gwlb_ip6      = length(var.availability_zones) >= 6 ? var.gwlb_ips[5] : ""
-    hostname      = "fgt${format("%d", count.index + 1)}a-${var.availability_zones[count.index]}"
-    azs           = length(var.availability_zones)
-    license_type  = var.license_type
-    license_file  = var.license_type == "byol" ? "${path.root}/${var.license_files_for_1st_fgt_per_az[count.index]}" : ""
-    license_token = var.license_type == "flex" ? var.flex_tokens_for_1st_fgt_per_az[count.index] : ""
+    azs            = length(var.availability_zones)
+    dedicated_mgmt = var.dedicated_management ? "true" : "false"
+    gwlb_ip1       = var.gwlb_ips[0]
+    gwlb_ip2       = var.gwlb_ips[1]
+    gwlb_ip3       = length(var.availability_zones) >= 3 ? var.gwlb_ips[2] : ""
+    gwlb_ip4       = length(var.availability_zones) >= 4 ? var.gwlb_ips[3] : ""
+    gwlb_ip5       = length(var.availability_zones) >= 5 ? var.gwlb_ips[4] : ""
+    gwlb_ip6       = length(var.availability_zones) >= 6 ? var.gwlb_ips[5] : ""
+    hostname       = "fgt${format("%d", count.index + 1)}a-${var.availability_zones[count.index]}"
+    license_type   = var.license_type
+    license_file   = var.license_type == "byol" ? "${path.root}/${var.license_files[count.index]}" : ""
+    license_token  = var.license_type == "flex" ? var.flex_tokens[count.index] : ""
   }
 }
 
-resource "aws_network_interface" "public_enis_b" {
-  count             = var.num_of_fgts_per_az == 2 ? length(var.availability_zones) : 0
+resource "aws_lb_target_group_attachment" "gwlb_target_group_attachments_a" {
+  count            = length(var.availability_zones)
+  target_group_arn = var.gwlb_target_group_arn
+  target_id        = local.one_arm ? aws_network_interface.one_arm_enis_a[count.index].private_ip : aws_network_interface.two_arm_private_enis_a[count.index].private_ip
+}
+
+resource "aws_network_interface" "one_arm_enis_b" {
+  count             = var.num_of_fgts_per_az == 2 && var.arm_mode == "1-arm" ? length(var.availability_zones) : 0
   subnet_id         = var.public_subnet_ids[count.index]
   security_groups   = [aws_security_group.secgrp.id]
   source_dest_check = false
   tags = {
-    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-eni0-${var.availability_zones[count.index]}"
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-1arm-public-${var.availability_zones[count.index]}"
   }
 }
 
-resource "aws_network_interface" "private_enis_b" {
-  count             = var.num_of_fgts_per_az == 2 ? length(var.availability_zones) : 0
+resource "aws_network_interface" "two_arm_public_enis_b" {
+  count             = var.num_of_fgts_per_az == 2 && var.arm_mode == "2-arm" ? length(var.availability_zones) : 0
+  subnet_id         = var.public_subnet_ids[count.index]
+  security_groups   = [aws_security_group.secgrp.id]
+  source_dest_check = false
+  tags = {
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-2arm-public-${var.availability_zones[count.index]}"
+  }
+}
+
+resource "aws_network_interface" "two_arm_private_enis_b" {
+  count             = var.num_of_fgts_per_az == 2 && var.arm_mode == "2-arm" ? length(var.availability_zones) : 0
   subnet_id         = var.private_subnet_ids[count.index]
   security_groups   = [aws_security_group.secgrp.id]
   source_dest_check = false
   tags = {
-    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-eni0-${var.availability_zones[count.index]}"
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-2arm-private-${var.availability_zones[count.index]}"
   }
 }
 
-resource "aws_eip" "fgt_eips_b" {
-  count             = var.num_of_fgts_per_az == 2 ? length(var.availability_zones) : 0
+resource "aws_network_interface" "dedicated_managment_enis_b" {
+  count             = var.num_of_fgts_per_az == 2 && var.dedicated_management ? length(var.availability_zones) : 0
+  subnet_id         = var.dedicated_management_placement == "public" ? var.public_subnet_ids[count.index] : var.private_subnet_ids[count.index]
+  security_groups   = [aws_security_group.secgrp.id]
+  source_dest_check = false
+  tags = {
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-mgmt-${var.availability_zones[count.index]}"
+  }
+}
+
+resource "aws_eip" "fgt_data_plane_eips_b" {
+  count             = var.num_of_fgts_per_az == 2 && var.internet_access == "eip" ? length(var.availability_zones) : 0
   domain            = "vpc"
-  network_interface = aws_network_interface.public_enis_b[count.index].id
+  network_interface = local.one_arm ? aws_network_interface.one_arm_enis_b[count.index].id : aws_network_interface.two_arm_public_enis_b[count.index].id
   tags = {
     Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-eip-${var.availability_zones[count.index]}"
+  }
+}
+
+resource "aws_eip" "fgt_dedicated_management_eips_b" {
+  count             = var.num_of_fgts_per_az == 2 && var.internet_access == "eip" && var.dedicated_management && var.dedicated_management_placement == "public" ? length(var.availability_zones) : 0
+  domain            = "vpc"
+  network_interface = aws_network_interface.dedicated_managment_enis_b[count.index].id
+  tags = {
+    Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-mgmt-eip-${var.availability_zones[count.index]}"
   }
 }
 
@@ -268,13 +368,46 @@ resource "aws_instance" "fgts_b" {
     volume_type = "gp2"
     encrypted   = var.encrypt_volumes
   }
-  network_interface {
-    device_index         = 0
-    network_interface_id = aws_network_interface.public_enis_b[count.index].id
-  }
-  network_interface {
-    device_index         = 1
-    network_interface_id = aws_network_interface.private_enis_b[count.index].id
+  dynamic "network_interface" {
+    for_each = local.one_arm ? (
+      concat(
+        [
+          {
+            device_index = 0
+            eni_id       = aws_network_interface.one_arm_enis_b[count.index].id
+          }
+        ],
+        var.dedicated_management ? [
+          {
+            device_index = 1
+            eni_id       = aws_network_interface.dedicated_managment_enis_b[count.index].id
+          }
+        ] : []
+      )
+      ) : (
+      concat(
+        [
+          {
+            device_index = 0
+            eni_id       = aws_network_interface.two_arm_public_enis_b[count.index].id
+          },
+          {
+            device_index = 1
+            eni_id       = aws_network_interface.two_arm_private_enis_b[count.index].id
+          }
+        ],
+        var.dedicated_management ? [
+          {
+            device_index = 2
+            eni_id       = aws_network_interface.dedicated_managment_enis_b[count.index].id
+          }
+        ] : []
+      )
+    )
+    content {
+      device_index         = network_interface.value.device_index
+      network_interface_id = network_interface.value.eni_id
+    }
   }
   tags = {
     Name = "${var.tag_name_prefix}-fgt${format("%d", count.index + 1)}b-${var.availability_zones[count.index]}"
@@ -283,19 +416,26 @@ resource "aws_instance" "fgts_b" {
 
 data "template_file" "fgt_userdata_b" {
   count    = var.num_of_fgts_per_az == 2 ? length(var.availability_zones) : 0
-  template = file("${path.module}/fgt-userdata.tpl")
+  template = file("${path.module}/fgt-${var.arm_mode}-userdata.tpl")
 
   vars = {
-    gwlb_ip1      = var.gwlb_ips[0]
-    gwlb_ip2      = var.gwlb_ips[1]
-    gwlb_ip3      = length(var.availability_zones) >= 3 ? var.gwlb_ips[2] : ""
-    gwlb_ip4      = length(var.availability_zones) >= 4 ? var.gwlb_ips[3] : ""
-    gwlb_ip5      = length(var.availability_zones) >= 5 ? var.gwlb_ips[4] : ""
-    gwlb_ip6      = length(var.availability_zones) >= 6 ? var.gwlb_ips[5] : ""
-    hostname      = "fgt${format("%d", count.index + 1)}b-${var.availability_zones[count.index]}"
-    azs           = length(var.availability_zones)
-    license_type  = var.license_type
-    license_file  = var.license_type == "byol" ? "${path.root}/${var.license_files_for_2nd_fgt_per_az[count.index]}" : ""
-    license_token = var.license_type == "flex" ? var.flex_Tokens_for_2nd_fgt_per_az[count.index] : ""
+    azs            = length(var.availability_zones)
+    dedicated_mgmt = var.dedicated_management ? "true" : "false"
+    gwlb_ip1       = var.gwlb_ips[0]
+    gwlb_ip2       = var.gwlb_ips[1]
+    gwlb_ip3       = length(var.availability_zones) >= 3 ? var.gwlb_ips[2] : ""
+    gwlb_ip4       = length(var.availability_zones) >= 4 ? var.gwlb_ips[3] : ""
+    gwlb_ip5       = length(var.availability_zones) >= 5 ? var.gwlb_ips[4] : ""
+    gwlb_ip6       = length(var.availability_zones) >= 6 ? var.gwlb_ips[5] : ""
+    hostname       = "fgt${format("%d", count.index + 1)}b-${var.availability_zones[count.index]}"
+    license_type   = var.license_type
+    license_file   = var.license_type == "byol" ? "${path.root}/${var.license_files[count.index + length(var.availability_zones)]}" : ""
+    license_token  = var.license_type == "flex" ? var.flex_tokens[count.index + length(var.availability_zones)] : ""
   }
+}
+
+resource "aws_lb_target_group_attachment" "gwlb_target_group_attachments_b" {
+  count            = var.num_of_fgts_per_az == 2 ? length(var.availability_zones) : 0
+  target_group_arn = var.gwlb_target_group_arn
+  target_id        = local.one_arm ? aws_network_interface.one_arm_enis_b[count.index].private_ip : aws_network_interface.two_arm_private_enis_b[count.index].private_ip
 }

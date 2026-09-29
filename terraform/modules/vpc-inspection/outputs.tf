@@ -14,6 +14,6 @@ output "gwlb_subnet_ids" {
   value = aws_subnet.gwlb_subnets[*].id
 }
 
-output "attachment_subnet1_id" {
+output "attachment_subnet_ids" {
   value = aws_subnet.attachment_subnets[*].id
 }
