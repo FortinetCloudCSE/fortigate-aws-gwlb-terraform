@@ -69,6 +69,9 @@ instance_type = "c6i.xlarge"
 # Specify the name of the keypair that the FGTs will use.
 keypair = ""
 
+# Specify "true" to encrypt the Fgts OS and Log volumes with your account's KMS default master key for EBS or not with "false".
+encrypt_volumes = true
+
 # Specify the CIDR block which you will be logging into the FGTs from.
 cidr_for_access = ""
 
