@@ -7,7 +7,7 @@ module "inspection-vpc-gwlb" {
   subnet_ids = var.existing_vpc_gwlb_subnet_ids
 
   tag_name_prefix = var.tag_name_prefix
-  tag_name_unique = "sec-gwlb"
+  tag_name_unique = "gwlb"
 }
 
 module "fgts" {

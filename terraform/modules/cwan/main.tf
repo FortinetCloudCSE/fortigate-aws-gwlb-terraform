@@ -48,35 +48,48 @@ data "aws_networkmanager_core_network_policy_document" "policy_data" {
     require_attachment_acceptance = false
     isolate_attachments           = false
   }
-  segments {
+  network_function_groups {
     name                          = "inspection"
-    description                   = "ngfw-segment"
-    edge_locations                = [var.region]
+    description                   = "ngfw-network-function-group"
     require_attachment_acceptance = false
-    isolate_attachments           = false
   }
 
   segment_actions {
-    action     = "share"
-    mode       = "attachment-route"
-    segment    = "production"
-    share_with = ["inspection"]
+    action  = "send-to"
+    segment = "production"
+    via {
+      network_function_groups = ["inspection"]
+    }
   }
   segment_actions {
-    action     = "share"
-    mode       = "attachment-route"
-    segment    = "development"
-    share_with = ["inspection"]
+    action  = "send-to"
+    segment = "development"
+    via {
+      network_function_groups = ["inspection"]
+    }
   }
   segment_actions {
-    action     = "share"
-    mode       = "attachment-route"
-    segment    = "sharedservices"
-    share_with = ["inspection"]
+    action  = "send-to"
+    segment = "sharedservices"
+    via {
+      network_function_groups = ["inspection"]
+    }
+  }
+  
+  segment_actions {
+    segment = "production"
+    action  = "send-via"
+    mode    = "single-hop" 
+    when_sent_to {
+      segments = ["production", "development", "sharedservices"]
+    }
+    via {
+      network_function_groups = ["inspection"]
+    }
   }
 
   attachment_policies {
-    rule_number     = 100
+    rule_number     = 1
     condition_logic = "and"
     conditions {
       type     = "tag-value"
@@ -90,7 +103,7 @@ data "aws_networkmanager_core_network_policy_document" "policy_data" {
     }
   }
   attachment_policies {
-    rule_number     = 200
+    rule_number     = 2
     condition_logic = "and"
     conditions {
       type     = "tag-value"
@@ -104,7 +117,7 @@ data "aws_networkmanager_core_network_policy_document" "policy_data" {
     }
   }
   attachment_policies {
-    rule_number     = 300
+    rule_number     = 3
     condition_logic = "and"
     conditions {
       type     = "tag-value"
@@ -118,7 +131,7 @@ data "aws_networkmanager_core_network_policy_document" "policy_data" {
     }
   }
   attachment_policies {
-    rule_number     = 400
+    rule_number     = 4
     condition_logic = "and"
     conditions {
       type     = "tag-value"
@@ -127,8 +140,7 @@ data "aws_networkmanager_core_network_policy_document" "policy_data" {
       value    = "inspection"
     }
     action {
-      association_method = "constant"
-      segment            = "inspection"
+      add_to_network_function_group = "inspection"
     }
   }
 }
