@@ -57,8 +57,8 @@ arm_mode = "1-arm"
 Specify true or false to attach a dedicated management ENI on the highest device index (1arm: port2, 2-arm: port3)
 Specify "public" or "private" to attach the dedicated management ENI in the Public or Private subnet.
 */
-dedicated_management           = true
-dedicated_management_placement = "public"
+dedicated_management           = false
+dedicated_management_placement = "private"
 
 # Specify number of Fgts to deploy per AZ (Min 1, Max 2)
 num_of_fgts_per_az = 1
