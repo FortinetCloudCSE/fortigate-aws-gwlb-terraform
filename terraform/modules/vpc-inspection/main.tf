@@ -65,15 +65,15 @@ resource "aws_internet_gateway" "igw" {
 }
 
 resource "aws_eip" "natgw_eips" {
-  count  = var.internet_access == "natgw" ? length(var.availability_zones) : 0
+  count  = var.internet_access == "natgw" || (var.arm_mode == "1-arm" && (var.cwan_used == 1 || var.tgw_used == 1)) ? length(var.availability_zones) : 0
   domain = "vpc"
   tags = {
-    Name = "${var.tag_name_prefix}-natgw-eip-${format("%d", count.index + 1)}-${var.availability_zones[count.index]}"
+    Name = "${var.tag_name_prefix}-${var.tag_name_unique}-natgw-eip-${format("%d", count.index + 1)}-${var.availability_zones[count.index]}"
   }
 }
 
 resource "aws_nat_gateway" "natgw" {
-  count             = var.internet_access == "natgw" ? 1 : 0
+  count             = var.internet_access == "natgw" || (var.arm_mode == "1-arm" && (var.cwan_used == 1 || var.tgw_used == 1)) ? 1 : 0
   depends_on        = [aws_internet_gateway.igw]
   vpc_id            = aws_vpc.vpc.id
   availability_mode = "regional"
@@ -91,7 +91,7 @@ resource "aws_nat_gateway" "natgw" {
     }
   }
   tags = {
-    Name = "${var.tag_name_prefix}-natgw-regional"
+    Name = "${var.tag_name_prefix}-${var.tag_name_unique}-natgw-regional"
   }
 }
 
@@ -182,7 +182,7 @@ resource "aws_route" "route_to_natgw1" {
 }
 
 resource "aws_route" "route_to_natgw2" {
-  count                  = var.arm_mode == "1-arm" && var.internet_access == "natgw" && var.cwan_used == 1 && var.tgw_used == 1 ? 1 : 0
+  count                  = var.arm_mode == "1-arm" && (var.cwan_used == 1 || var.tgw_used == 1) ? 1 : 0
   route_table_id         = aws_route_table.gwlb_rtb.id
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.natgw[count.index].id

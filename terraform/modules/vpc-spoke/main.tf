@@ -87,7 +87,7 @@ resource "aws_eip" "natgw_eips" {
   depends_on = [aws_internet_gateway.igw]
   domain     = "vpc"
   tags = {
-    Name = "${var.tag_name_prefix}-natgw-eip-${format("%d", count.index + 1)}-${var.availability_zones[count.index]}"
+    Name = "${var.tag_name_prefix}-${var.tag_name_unique}-natgw-eip-${format("%d", count.index + 1)}-${var.availability_zones[count.index]}"
   }
 }
 

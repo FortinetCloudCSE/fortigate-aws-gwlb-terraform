@@ -73,8 +73,8 @@ arm_mode = "1-arm"
 Specify "true" or "false" to attach a dedicated management ENI on the highest device index (1arm: port2, 2-arm: port3)
 Specify "public" or "private" to attach the dedicated management ENI in the Public or Private subnet.
 */
-dedicated_management           = true
-dedicated_management_placement = "public"
+dedicated_management           = false
+dedicated_management_placement = "private"
 
 # Specify number of Fgts to deploy per AZ (Min 1, Max 2)
 num_of_fgts_per_az = 1
@@ -84,6 +84,9 @@ instance_type = "c6i.xlarge"
 
 # Specify the name of the keypair that the FGTs will use.
 keypair = ""
+
+# Specify "true" to encrypt the Fgts OS and Log volumes with your account's KMS default master key for EBS or not with "false".
+encrypt_volumes = true
 
 # Specify the CIDR block which you will be logging into the FGTs from.
 cidr_for_access = ""

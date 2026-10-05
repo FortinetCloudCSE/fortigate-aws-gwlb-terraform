@@ -19,7 +19,6 @@ resource "aws_lb_target_group" "gwlb_target_group" {
   health_check {
     protocol = "HTTP"
     port     = "8008"
-    #path                = "/"
     interval            = "5"
     timeout             = "5"
     healthy_threshold   = "3"
@@ -29,6 +28,7 @@ resource "aws_lb_target_group" "gwlb_target_group" {
 
 resource "aws_lb_listener" "gwlb_listner" {
   load_balancer_arn = aws_lb.gwlb.id
+  tcp_idle_timeout_seconds = 3600
   default_action {
     target_group_arn = aws_lb_target_group.gwlb_target_group.id
     type             = "forward"
