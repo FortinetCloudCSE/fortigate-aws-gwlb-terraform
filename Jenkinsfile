@@ -12,15 +12,52 @@ pipeline {
     agent any
 
     stages {
-        stage('Placeholder') {
+
+       stage('Checking for question/discussion section in content folders'){
+            when { expression { false } }
             steps {
-                echo 'No Jenkins tasks configured. Pipeline reserved for future use.'
+              script {
+                def warningFound = false
+                try {
+                  sh '''
+                  for dir in content/*/; do
+                    found=false
+                    for file in "$dir"/*; do
+                      if grep -qiE 'discussion|questions|q&a' "$file" >/dev/null 2>&1; then
+                        found=true
+                        break
+                      fi
+                    done
+                    if [ "$found" == "true" ]; then
+                      echo "$dir: relevant section found"
+                    else
+                      echo "$dir: sections not found"
+                      warningFound=true
+                    fi
+                  done
+                  if [ "$warningFound" == "true" ]; then
+                    echo "Warning: some content directories did not contain any files with a discussion/questions/q&a section."
+                  fi
+                  '''
+                } catch (Exception e) {
+                   echo "An error occurred: ${e.message}"
+                }
+              }
+            }
+       }
+
+        stage('Clean workspace') {
+            steps {
+                deleteDir()
             }
         }
     }
     post {
-        always {
-            setBuildStatus("Build succeeded", "SUCCESS", "${GIT_URL}");
-        }
-    }
+     success {
+        setBuildStatus("Build succeeded", "SUCCESS", "${GIT_URL}");
+     }
+     failure {
+        setBuildStatus("Build failed", "FAILURE", "${GIT_URL}");
+     }
+  }
 }
