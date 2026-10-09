@@ -46,9 +46,8 @@ set defaultgw disable
 set allowaccess ping https fgfm probe-response
 %{ endif }
 %{ if dedicated_mgmt == "true" }
-set allowaccess ping
-%{ endif }
 set allowaccess ping probe-response
+%{ endif }
 set type physical
 set mtu-override enable
 set mtu 9001
