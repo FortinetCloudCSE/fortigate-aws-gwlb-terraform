@@ -121,8 +121,6 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "main" {
   transit_gateway_id = var.transit_gateway_id
   vpc_id             = aws_vpc.vpc.id
 
-  appliance_mode_support = "enable"
-
   tags = {
     Name = "${var.tag_name_prefix}-${var.tag_name_unique}-vpc-attachment"
   }
@@ -155,10 +153,6 @@ resource "aws_networkmanager_vpc_attachment" "main" {
     "arn:aws:ec2:${var.region}:${var.cwan_account_id}:subnet/${aws_subnet.private[i].id}"
   ]
   vpc_arn = "arn:aws:ec2:${var.region}:${var.cwan_account_id}:vpc/${aws_vpc.vpc.id}"
-
-  options {
-    appliance_mode_support = true
-  }
 
   tags = merge(
     {
